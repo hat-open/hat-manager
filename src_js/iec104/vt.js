@@ -570,7 +570,7 @@ function tableData(data, showTimestamp, isSelected=null, onClick=null, onRemove=
                     click: _ => (onClick ? onClick(id) : null)
                 }},
                 (!showTimestamp ? [] : ['td.col-timestamp',
-                    datetime.utcTimestampToLocalString(i.timestamp)
+                    datetime.timestampToLocalString(i.timestamp)
                 ]),
                 ['td.col-str', val('type')],
                 ['td.col-int', val('asdu')],

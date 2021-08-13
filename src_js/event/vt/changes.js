@@ -23,8 +23,8 @@ export function main(deviceId) {
                         ['col-type', event.event_type.join(', ')],
                         ['col-id', String(event.event_id.server)],
                         ['col-id', String(event.event_id.instance)],
-                        ['col-timestamp', datetime.utcTimestampToLocalString(event.timestamp)],
-                        ['col-timestamp', datetime.utcTimestampToLocalString(event.source_timestamp)],
+                        ['col-timestamp', datetime.timestampToLocalString(event.timestamp)],
+                        ['col-timestamp', datetime.timestampToLocalString(event.source_timestamp)],
                         ['col-payload', JSON.stringify(event.payload)]
                     ];
                     return ['tr', columns.map(([type, value]) =>

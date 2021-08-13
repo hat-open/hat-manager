@@ -55,8 +55,8 @@ function eventTreeNode(deviceId, node) {
     const type = node.type[node.type.length - 1];
     const serverId = !node.event ? '' : String(node.event.event_id.server);
     const instanceId = !node.event ? '' : String(node.event.event_id.instance);
-    const timestamp = !node.event ? '' : datetime.utcTimestampToLocalString(node.event.timestamp);
-    const sourceTimestamp = !node.event ? '' : datetime.utcTimestampToLocalString(node.event.source_timestamp);
+    const timestamp = !node.event ? '' : datetime.timestampToLocalString(node.event.timestamp);
+    const sourceTimestamp = !node.event ? '' : datetime.timestampToLocalString(node.event.source_timestamp);
     const payload = !node.event ? '' : JSON.stringify(node.event.payload);
 
     return [

@@ -1,10 +1,18 @@
-@import 'common';
+@import 'color';
+@import 'shadow';
+@import 'table';
+@import 'fonts/inter';
+@import 'fonts/fontawesome';
 
 @import 'orchestrator';
 @import 'monitor';
 @import 'event';
 @import 'iec104';
 @import 'modbus';
+
+
+$log-size: 10rem;
+$resizer-size: 0.4rem;
 
 
 html, body {
@@ -20,11 +28,12 @@ html, body {
     height: 100%;
     background-color: $color-grey-200;
     display: grid;
-    grid-template-columns: max-content 1fr;
-    grid-template-rows: auto 1fr 10rem;
-    grid-template-areas: 'globalHeader deviceHeader'
-                         'sidebar page'
-                         'log log';
+    grid-template-columns: max-content $resizer-size 1fr;
+    grid-template-rows: auto 1fr $resizer-size auto;
+    grid-template-areas: 'globalHeader deviceHeader deviceHeader'
+                         'sidebar sidebarResizer page'
+                         'logResizer logResizer logResizer'
+                         'log log log';
 
     & > .header {
         padding: 0.2rem;
@@ -59,7 +68,6 @@ html, body {
         background-color: $color-grey-100;
         display: flex;
         flex-direction: column;
-        resize: horizontal;
         overflow: hidden;
         min-width: 10rem;
 
@@ -104,9 +112,21 @@ html, body {
         }
     }
 
+    & > .sidebar-resizer {
+        grid-area: sidebarResizer;
+        cursor: ew-resize;
+    }
+
     & > .page {
         grid-area: page;
         overflow: auto;
+    }
+
+    & > .log-resizer {
+        grid-area: logResizer;
+        cursor: ns-resize;
+        background-color: $color-grey-400;
+        z-index: 1;
     }
 
     & > .log {
@@ -115,6 +135,7 @@ html, body {
         border-top: 1px solid $color-grey-400;
         background-color: $color-grey-100;
         overflow: auto;
+        height: $log-size;
 
         & > table {
             @extend %table;

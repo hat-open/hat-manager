@@ -27,8 +27,7 @@ user_conf_dir: Path = Path(appdirs.user_config_dir('hat'))
 @click.option('--conf', default=None, metavar='PATH', type=Path,
               help="configuration defined by hat-manager://main.yaml# "
                    "(default $XDG_CONFIG_HOME/hat/manager.{yaml|yml|json})")
-def main(conf: typing.Optional[Path],
-         ui_path: Path):
+def main(conf: typing.Optional[Path]):
     """Main entry point"""
     aio.init_asyncio()
 
@@ -47,14 +46,13 @@ def main(conf: typing.Optional[Path],
     logging.config.dictConfig(conf['log'])
 
     with contextlib.suppress(asyncio.CancelledError):
-        aio.run_asyncio(async_main(conf, conf_path, ui_path))
+        aio.run_asyncio(async_main(conf, conf_path))
 
 
 async def async_main(conf: json.Data,
-                     conf_path: Path,
-                     ui_path: Path):
+                     conf_path: Path):
     """Async main entry point"""
-    srv = await create_server(conf, conf_path, ui_path)
+    srv = await create_server(conf, conf_path)
     try:
         await srv.wait_closing()
     finally:

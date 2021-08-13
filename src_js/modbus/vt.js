@@ -120,7 +120,7 @@ function masterData(deviceId) {
             ['tbody', data.map(i =>
                 ['tr',
                     ['td.col-timestamp',
-                        datetime.utcTimestampToLocalString(i.timestamp)
+                        datetime.timestampToLocalString(i.timestamp)
                     ],
                     ['td.col-str', val(i.action)],
                     ['td.col-int', val(i.device_id)],

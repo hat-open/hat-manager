@@ -3,6 +3,7 @@ import * as u from '@hat-open/util';
 
 import * as datetime from './datetime';
 import * as common from './common';
+import * as dragger from './dragger';
 
 import * as orchestratorVt from './orchestrator/vt';
 import * as monitorVt from './monitor/vt';
@@ -27,7 +28,9 @@ export function main() {
         globalHeader(),
         deviceHeader(),
         sidebar(),
+        sidebarResizer(),
         page(),
+        logResizer(),
         log(),
         addDialog(),
         settingsDialog()
@@ -148,6 +151,21 @@ function sidebar() {
 }
 
 
+function sidebarResizer() {
+    return ['div.sidebar-resizer', {
+        on: {
+            mousedown: dragger.mouseDownHandler(evt => {
+                const sidebar = evt.target.parentNode.querySelector('.sidebar');
+                const width = sidebar.clientWidth;
+                return (_, dx) => {
+                    sidebar.style.width = width + dx;
+                };
+            })
+        }
+    }];
+}
+
+
 function page() {
     const deviceId = r.get('deviceId');
     if (!deviceId)
@@ -180,6 +198,21 @@ function page() {
 }
 
 
+function logResizer() {
+    return ['div.log-resizer', {
+        on: {
+            mousedown: dragger.mouseDownHandler(evt => {
+                const sidebar = evt.target.parentNode.querySelector('.log');
+                const height = sidebar.clientHeight;
+                return (_, __, dy) => {
+                    sidebar.style.height = height - dy;
+                };
+            })
+        }
+    }];
+}
+
+
 function log() {
     const items = r.get('remote', 'log') || [];
     return ['div.log',
@@ -192,7 +225,7 @@ function log() {
             ],
             ['tbody', items.map(i =>
                 ['tr',
-                    ['td.col-time', datetime.utcTimestampToLocalString(i.timestamp)],
+                    ['td.col-time', datetime.timestampToLocalString(i.timestamp)],
                     ['td.col-message', i.message]
                 ]
             )]
