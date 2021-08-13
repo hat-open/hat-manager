@@ -14,14 +14,16 @@
 $log-size: 10rem;
 $resizer-size: 0.4rem;
 
+html, body, button, input, select {
+    font-family: 'Inter';
+    font-size: 12pt;
+}
 
 html, body {
     margin: 0;
-    font-family: 'Inter';
     user-select: none;
     height: 100%;
     overflow: hidden;
-    font-size: 12pt;
 }
 
 #main {
@@ -62,9 +64,7 @@ html, body {
     }
 
     & > .sidebar {
-        @include shadow-4dp;
         grid-area: sidebar;
-        border-right: 1px solid $color-grey-400;
         background-color: $color-grey-100;
         display: flex;
         flex-direction: column;
@@ -113,8 +113,10 @@ html, body {
     }
 
     & > .sidebar-resizer {
+        @include shadow-2dp;
         grid-area: sidebarResizer;
         cursor: ew-resize;
+        background-color: $color-grey-400;
     }
 
     & > .page {
@@ -123,6 +125,7 @@ html, body {
     }
 
     & > .log-resizer {
+        @include shadow-2dp;
         grid-area: logResizer;
         cursor: ns-resize;
         background-color: $color-grey-400;
@@ -159,6 +162,7 @@ html, body {
         display: flex;
         justify-content: center;
         align-items: center;
+        z-index: 10;
 
         & > .dialog {
             @include shadow-4dp;
@@ -171,9 +175,19 @@ html, body {
                 display: flex;
                 flex-direction: column;
 
-                & > * {
-                    &:not(:last-child) {
-                        margin-bottom: 0.5rem;
+                & > .device {
+                    padding: 0.5rem;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+
+                    .icon {
+                        width: 32px;
+                        margin-right: 0.5rem;
+                    }
+
+                    &:hover {
+                        background-color: $color-grey-300;
                     }
                 }
             }
@@ -189,6 +203,7 @@ html, body {
                     background: $color-grey-700;
                     color: $color-grey-100;
                     padding: 0.2rem;
+                    font-weight: 600;
                 }
 
                 & > .label {

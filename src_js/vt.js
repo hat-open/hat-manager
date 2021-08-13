@@ -12,14 +12,35 @@ import * as iec104Vt from './iec104/vt';
 import * as modbusVt from './modbus/vt';
 
 
-const deviceTypeTitles = {
-    orchestrator: 'Orchestrator',
-    monitor: 'Monitor Server',
-    event: 'Event Server',
-    iec104_master: 'IEC104 Master',
-    iec104_slave: 'IEC104 Slave',
-    modbus_master: 'Modbus Master',
-    modbus_slave: 'Modbus Slave',
+const deviceTypes = {
+    orchestrator: {
+        name: 'Orchestrator',
+        icon: 'icons/hat.png'
+    },
+    monitor: {
+        name: 'Monitor Server',
+        icon: 'icons/hat.png'
+    },
+    event: {
+        name: 'Event Server',
+        icon: 'icons/hat.png'
+    },
+    iec104_master: {
+        name: 'IEC104 Master',
+        icon: 'icons/iec.png'
+    },
+    iec104_slave: {
+        name: 'IEC104 Slave',
+        icon: 'icons/iec.png'
+    },
+    modbus_master: {
+        name: 'Modbus Master',
+        icon: 'icons/modbus.png'
+    },
+    modbus_slave: {
+        name: 'Modbus Slave',
+        icon: 'icons/modbus.png'
+    }
 };
 
 
@@ -68,7 +89,7 @@ function deviceHeader() {
         return ['div.header.device'];
 
     return ['div.header.device',
-        ['label', deviceTypeTitles[device.type]],
+        ['label', deviceTypes[device.type].name],
         ['input', {
             props: {
                 type: 'text',
@@ -136,7 +157,7 @@ function sidebar() {
                     }],
                     ['span.name', device.name],
                     ' ',
-                    ['span.type', `(${deviceTypeTitles[device.type]})`]
+                    ['span.type', `(${deviceTypes[device.type].name})`]
                 ];
             })
         ],
@@ -239,8 +260,6 @@ function addDialog() {
     if (!open)
         return [];
 
-    const selectedDeviceType = r.get('addDialog', 'deviceType');
-
     return ['div.overlay', {
         on: {
             click: evt => {
@@ -252,33 +271,20 @@ function addDialog() {
             on: {
                 click: evt => evt.stopPropagation()
             }},
-            ['select', {
-                props: {
-                    size: 10
-                },
-                on: {
-                    change: evt => r.set(['addDialog', 'deviceType'], evt.target.value)
-                }},
-                u.toPairs(deviceTypeTitles).map(([deviceType, name]) => ['option', {
-                    props: {
-                        selected: deviceType == selectedDeviceType,
-                        value: deviceType
-                    }},
-                    name
-                ])
-            ],
-            ['button', {
+            u.toPairs(deviceTypes).map(([deviceType, i]) => ['div.device', {
                 on: {
                     click: _ => {
-                        if (!selectedDeviceType)
-                            return;
-                        common.add(selectedDeviceType);
+                        common.add(deviceType);
                         common.hideAddDialog();
                     }
                 }},
-                ['span.fa.fa-plus'],
-                ' Add device'
-            ]
+                ['img.icon', {
+                    props: {
+                        src: i.icon
+                    }
+                }],
+                ['span.name', i.name]
+            ])
         ]
     ];
 }

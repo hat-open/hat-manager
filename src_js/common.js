@@ -11,8 +11,7 @@ export const defaultState = {
     local: null,
     deviceId: null,
     addDialog: {
-        open: false,
-        deviceType: null
+        open: false
     },
     settingsDialog: {
         open: false
