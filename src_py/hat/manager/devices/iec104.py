@@ -1,3 +1,5 @@
+import collections
+import contextlib
 import functools
 import itertools
 import time
@@ -221,43 +223,52 @@ class Slave(common.Device):
 
     def _on_interrogate(self, conn, asdu):
         self._logger.log(f'received interrogate request (asdu: {asdu})')
-        data = (_data_from_json(i)
-                for i in self._data.data['data'].values()
-                if i['type'] != 'BinaryCounter' and (asdu == 0xFFFF or
-                                                     asdu == i['asdu']))
-        data = [i._replace(cause=iec104.Cause.INTERROGATED_STATION)
-                for i in data if i]
-        return data
+        result = collections.deque()
+        for i in self._data.data['data'].values():
+            if i['type'] == 'BinaryCounter':
+                continue
+            if asdu != 0xFFFF and asdu != i['asdu']:
+                continue
+            with contextlib.suppress(Exception):
+                data = _data_from_json(i)
+                data = data._replace(cause=iec104.Cause.INTERROGATED_STATION)
+                result.append(data)
+        return list(result)
 
     def _on_counter_interrogate(self, conn, asdu, freeze):
         self._logger.log(f'received counter interrogate request '
                          f'(asdu: {asdu})')
-        data = (_data_from_json(i)
-                for i in self._data.data['data'].values()
-                if i['type'] == 'BinaryCounter' and (asdu == 0xFFFF or
-                                                     asdu == i['asdu']))
-        data = [i._replace(cause=iec104.Cause.INTERROGATED_COUNTER)
-                for i in data if i]
-        return data
+        result = collections.deque()
+        for i in self._data.data['data'].values():
+            if i['type'] != 'BinaryCounter':
+                continue
+            if asdu != 0xFFFF and asdu != i['asdu']:
+                continue
+            with contextlib.suppress(Exception):
+                data = _data_from_json(i)
+                data = data._replace(cause=iec104.Cause.INTERROGATED_COUNTER)
+                result.append(data)
+        return list(result)
 
-    def _on_command(self, conn, cmd):
-        self._logger.log(f'received command {cmd}')
-        key = _value_to_type(cmd.value), cmd.asdu_address, cmd.io_address
-        command_id, command = util.first(
-            self._data['commands'].items(),
-            lambda i: (i[1]['type'], i[1]['asdu'], i[1]['io']) == key,
-            (None, None))
-        success = bool(command['success']) if command else False
-        if success:
-            self._data.set(['commands', command_id, 'value'],
-                           _value_to_json(cmd.value))
-        self._logger.log(f'sending command success {success}')
+    def _on_command(self, conn, cmds):
+        self._logger.log(f'received commands {cmds}')
+        success = True
+        for cmd in cmds:
+            value = _value_to_json(cmd.value)
+            key = util.first(value.keys()), cmd.asdu_address, cmd.io_address
+            command_id, command = util.first(
+                self._data.data['commands'].items(),
+                lambda i: (i[1]['type'], i[1]['asdu'], i[1]['io']) == key,
+                (None, None))
+            cmd_success = bool(command['success']) if command else False
+            if cmd_success:
+                self._data.set(['commands', command_id, 'value'], value)
+            else:
+                success = False
+        self._logger.log(f'sending commands success {success}')
         return success
 
     def _on_data_change(self, conn, data):
-        data = _data_from_json(data)
-        if not data:
-            return
         conn.notify_data_change([data])
 
     def _act_set_property(self, path, value):
@@ -267,14 +278,31 @@ class Slave(common.Device):
     def _act_add_data(self):
         self._logger.log('creating new data')
         data_id = next(self._next_data_ids)
-        self._data.set(['data', data_id], {'type': None,
-                                           'asdu': None,
-                                           'io': None,
-                                           'value': None,
-                                           'quality': None,
-                                           'time': None,
-                                           'cause': None,
-                                           'is_test': None})
+        self._data.set(['data', data_id], {
+            'type': 'Single',
+            'asdu': None,
+            'io': None,
+            'value': {'Single': 'OFF',
+                      'Double': 'OFF',
+                      'StepPosition': {'value': 0,
+                                       'transient': False},
+                      'Bitstring': '00 00 00 00',
+                      'Normalized': 0,
+                      'Scaled': 0,
+                      'Floating': 0,
+                      'BinaryCounter': {'value': 0,
+                                        'sequence': 0,
+                                        'overflow': False,
+                                        'adjusted': False,
+                                        'invalid': False}},
+            'quality': {'invalid': False,
+                        'not_topical': False,
+                        'substituted': False,
+                        'blocked': False,
+                        'overflow': False},
+            'time': None,
+            'cause': 'UNDEFINED',
+            'is_test': False})
         return data_id
 
     def _act_remove_data(self, data_id):
@@ -284,16 +312,26 @@ class Slave(common.Device):
     def _act_change_data(self, data_id, path, value):
         self._logger.log(f'changing data {path} to {value}')
         self._data.set(['data', data_id, path], value)
-        self._data_change_cbs.notify(self._data.data['data'][data_id])
+        try:
+            data = _data_from_json(self._data.data['data'][data_id])
+        except Exception:
+            return
+        self._data_change_cbs.notify(data)
 
     def _act_add_command(self):
         self._logger.log('creating new command')
         command_id = next(self._next_command_ids)
-        self._data.set(['commands', command_id], {'type': None,
-                                                  'asdu': None,
-                                                  'io': None,
-                                                  'value': None,
-                                                  'success': None})
+        self._data.set(['commands', command_id], {
+            'type': 'Single',
+            'asdu': None,
+            'io': None,
+            'value': {'Single': 'OFF',
+                      'Double': 'OFF',
+                      'Regulating': 'LOWER',
+                      'Normalized': 0,
+                      'Scaled': 0,
+                      'Floating': 0},
+            'success': True})
         return command_id
 
     def _act_remove_command(self, command_id):
@@ -306,215 +344,102 @@ class Slave(common.Device):
 
 
 def _data_to_json(data):
-    return {'type': _value_to_type(data.value),
+    value = _value_to_json(data.value)
+    return {'type': util.first(value.keys()),
             'asdu': data.asdu_address,
             'io': data.io_address,
-            'value': _value_to_json(data.value),
-            'quality': _quality_to_json(data.quality),
-            'time': _time_to_json(data.time),
-            'cause': _cause_to_json(data.cause),
+            'value': value,
+            'quality': data.quality._asdict() if data.quality else None,
+            'time': data.time._asdict() if data.time else None,
+            'cause': data.cause.name,
             'is_test': data.is_test}
 
 
 def _data_from_json(data):
-    if not data['type'] or data['asdu'] is None or data['io'] is None:
-        return
+    if data['asdu'] is None or data['io'] is None:
+        raise Exception('undefined asdu/io')
+
     return iec104.Data(
         value=_value_from_json(data['type'], data['value']),
-        quality=_quality_from_json(data['type'], data['quality']),
-        time=_time_from_json(data['time']),
+        quality=iec104.Quality(**data['quality']) if data['quality'] else None,
+        time=iec104.Time(**data['time']) if data['time'] else None,
         asdu_address=data['asdu'],
         io_address=data['io'],
-        cause=_cause_from_json(data['cause']),
-        is_test=data['is_test'] or False)
+        cause=iec104.Cause[data['cause']],
+        is_test=data['is_test'])
 
 
 def _cmd_from_json(cmd):
+    if cmd['asdu'] is None or cmd['io'] is None:
+        raise Exception('undefined asdu/io')
+
     return iec104.Command(
-        action=_action_from_json(cmd['action']),
+        action=iec104.Action[cmd['action']],
         value=_value_from_json(cmd['type'], cmd['value']),
         asdu_address=cmd['asdu'],
         io_address=cmd['io'],
-        time=_time_from_json(cmd['time']),
+        time=iec104.Time(**cmd['time']) if cmd['time'] else None,
         qualifier=cmd['qualifier'] or 0)
 
 
 def _value_to_json(value):
     if isinstance(value, iec104.SingleValue):
-        return value.name
+        return {'Single': value.name}
 
     if isinstance(value, iec104.DoubleValue):
-        return value.name
+        return {'Double': value.name}
 
     if isinstance(value, iec104.RegulatingValue):
-        return value.name
+        return {'Regulating': value.name}
 
     if isinstance(value, iec104.StepPositionValue):
-        return value._asdict()
+        return {'StepPosition': value._asdict()}
 
     if isinstance(value, iec104.BitstringValue):
-        return value.value.hex()
+        return {'Bitstring': value.value.hex()}
 
     if isinstance(value, iec104.NormalizedValue):
-        return value.value
+        return {'Normalized': value.value}
 
     if isinstance(value, iec104.ScaledValue):
-        return value.value
+        return {'Scaled': value.value}
 
     if isinstance(value, iec104.FloatingValue):
-        return value.value
+        return {'Floating': value.value}
 
     if isinstance(value, iec104.BinaryCounterValue):
-        return value._asdict()
+        return {'BinaryCounter': value._asdict()}
 
     raise ValueError('unsupported value')
 
 
 def _value_from_json(data_type, value):
     if data_type == 'Single':
-        try:
-            return iec104.SingleValue[value]
-        except Exception:
-            return iec104.SingleValue.OFF
+        return iec104.SingleValue[value['Single']]
 
     if data_type == 'Double':
-        try:
-            return iec104.DoubleValue[value]
-        except Exception:
-            return iec104.DoubleValue.FAULT
+        return iec104.DoubleValue[value['Double']]
 
     if data_type == 'Regulating':
-        try:
-            return iec104.RegulatingValue[value]
-        except Exception:
-            return iec104.RegulatingValue.LOWER
+        return iec104.RegulatingValue[value['Regulating']]
 
     if data_type == 'StepPosition':
-        try:
-            return iec104.StepPositionValue(value=int(value['value']),
-                                            transient=bool(value['transient']))
-        except Exception:
-            return iec104.StepPositionValue(0, False)
+        return iec104.StepPositionValue(**value['StepPosition'])
 
     if data_type == 'Bitstring':
-        try:
-            return iec104.BitstringValue(
-                (bytes.fromhex(value) + b'\x00\x00\x00\x00')[:4])
-        except Exception:
-            return iec104.BitstringValue(b'\x00\x00\x00\x00')
+        return iec104.BitstringValue((bytes.fromhex(value['Bitstring']) +
+                                      b'\x00\x00\x00\x00')[:4])
 
     if data_type == 'Normalized':
-        try:
-            return iec104.NormalizedValue(float(value))
-        except Exception:
-            return iec104.NormalizedValue(0)
+        return iec104.NormalizedValue(value['Normalized'])
 
     if data_type == 'Scaled':
-        try:
-            return iec104.ScaledValue(int(value))
-        except Exception:
-            return iec104.ScaledValue(0)
+        return iec104.ScaledValue(value['Scaled'])
 
     if data_type == 'Floating':
-        try:
-            return iec104.FloatingValue(float(value))
-        except Exception:
-            return iec104.FloatingValue(0)
+        return iec104.FloatingValue(value['Floating'])
 
     if data_type == 'BinaryCounter':
-        try:
-            return iec104.BinaryCounterValue(value=int(value['value']),
-                                             sequence=int(value['sequence']),
-                                             overflow=bool(value['overflow']),
-                                             adjusted=bool(value['adjusted']),
-                                             invalid=bool(value['invalid']))
-        except Exception:
-            return iec104.BinaryCounterValue(0, 0, False, False, False)
+        return iec104.BinaryCounterValue(**value['BinaryCounter'])
 
     raise ValueError('unsupported data type')
-
-
-def _quality_to_json(quality):
-    if not quality:
-        return
-    return quality._asdict()
-
-
-def _quality_from_json(data_type, quality):
-    if data_type == 'BinaryCounter':
-        return None
-    quality = quality or {}
-    if data_type in ('Single', 'Double'):
-        overflow = None
-    else:
-        overflow = bool(quality.get('overflow'))
-    return iec104.Quality(invalid=bool(quality.get('invalid')),
-                          not_topical=bool(quality.get('not_topical')),
-                          substituted=bool(quality.get('substituted')),
-                          blocked=bool(quality.get('blocked')),
-                          overflow=overflow)
-
-
-def _time_to_json(time):
-    return time._asdict() if time else None
-
-
-def _time_from_json(time):
-    if not time:
-        return
-    return iec104.Time(milliseconds=int(time['milliseconds']),
-                       invalid=bool(time['invalid']),
-                       minutes=int(time['minutes']),
-                       summer_time=bool(time['summer_time']),
-                       hours=int(time['hours']),
-                       day_of_week=int(time['day_of_week']),
-                       day_of_month=int(time['day_of_month']),
-                       months=int(time['months']),
-                       years=int(time['years']))
-
-
-def _cause_to_json(cause):
-    return cause.name
-
-
-def _cause_from_json(cause):
-    if not cause:
-        return iec104.Cause.UNDEFINED
-    return iec104.Cause[cause]
-
-
-def _action_from_json(action):
-    if not action:
-        return iec104.Action.EXECUTE
-    return iec104.Action[action]
-
-
-def _value_to_type(value):
-    if isinstance(value, iec104.SingleValue):
-        return 'Single'
-
-    if isinstance(value, iec104.DoubleValue):
-        return 'Double'
-
-    if isinstance(value, iec104.RegulatingValue):
-        return 'Regulating'
-
-    if isinstance(value, iec104.StepPositionValue):
-        return 'StepPosition'
-
-    if isinstance(value, iec104.BitstringValue):
-        return 'Bitstring'
-
-    if isinstance(value, iec104.NormalizedValue):
-        return 'Normalized'
-
-    if isinstance(value, iec104.ScaledValue):
-        return 'Scaled'
-
-    if isinstance(value, iec104.FloatingValue):
-        return 'Floating'
-
-    if isinstance(value, iec104.BinaryCounterValue):
-        return 'BinaryCounter'
-
-    raise ValueError('invalid value')
