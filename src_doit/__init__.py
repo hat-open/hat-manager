@@ -4,6 +4,7 @@ import tempfile
 
 from hat import json
 from hat.doit import common
+from hat.doit.js import run_eslint
 from hat.doit.py import (build_wheel,
                          run_pytest,
                          run_flake8)
@@ -64,9 +65,11 @@ def task_build():
 
 
 def task_check():
-    """Check with flake8"""
+    """Check with flake8 and eslint"""
     return {'actions': [(run_flake8, [src_py_dir]),
-                        (run_flake8, [pytest_dir])]}
+                        (run_flake8, [pytest_dir]),
+                        (run_eslint, [src_js_dir])],
+            'task_dep': ['deps']}
 
 
 def task_test():

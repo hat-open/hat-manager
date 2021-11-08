@@ -179,7 +179,7 @@ function sidebarResizer() {
                 const sidebar = evt.target.parentNode.querySelector('.sidebar');
                 const width = sidebar.clientWidth;
                 return (_, dx) => {
-                    sidebar.style.width = width + dx;
+                    sidebar.style.width = `${width + dx}px`;
                 };
             })
         }
@@ -226,7 +226,7 @@ function logResizer() {
                 const sidebar = evt.target.parentNode.querySelector('.log');
                 const height = sidebar.clientHeight;
                 return (_, __, dy) => {
-                    sidebar.style.height = height - dy;
+                    sidebar.style.height = `${height - dy}px`;
                 };
             })
         }
