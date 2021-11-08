@@ -56,6 +56,16 @@ const dataCauses = ['',
                     'UNKNOWN_ASDU_ADDRESS',
                     'UNKNOWN_IO_ADDRESS'];
 
+const singleValues = ['OFF', 'ON'];
+
+const doubleValues = ['INTERMEDIATE', 'OFF', 'ON', 'FAULT'];
+
+const regulatingValues = ['LOWER', 'HIGHER'];
+
+const commandActions = ['EXECUTE', 'SELECT', 'CANCEL'];
+
+const freezeValues = ['READ', 'FREEZE', 'FREEZE_AND_RESET', 'RESET'];
+
 
 export function master() {
     const deviceId = r.get('deviceId');
@@ -83,7 +93,9 @@ export function slave() {
 function properties(deviceId) {
     const properties = r.get('remote', 'devices', deviceId, 'data', 'properties');
 
-    const onChange = u.curry((property, value) => common.setProperty(deviceId, property, value));
+    const onChange = u.curry((property, value) =>
+        common.setProperty(deviceId, property, value)
+    );
 
     return ['div.properties',
         formEntryText('Host', properties.host, onChange('host')),
@@ -134,16 +146,7 @@ function masterControlInterrogate(deviceId) {
 
     return ['div.content',
         ['div.form',
-            ['label', 'ASDU'],
-            ['input', {
-                props: {
-                    type: 'number',
-                    value: asdu
-                },
-                on: {
-                    change: evt => r.set(asduPath, evt.target.valueAsNumber)
-                }
-            }]
+            formEntryNumber('ASDU', asdu, val => r.set(asduPath, val))
         ],
         ['button', {
             on: {
@@ -165,28 +168,13 @@ function masterControlCounterInterrogate(deviceId) {
 
     return ['div.content',
         ['div.form',
-            ['label', 'ASDU'],
-            ['input', {
-                props: {
-                    type: 'number',
-                    value: asdu
-                },
-                on: {
-                    change: evt => r.set(asduPath, evt.target.valueAsNumber)
-                }
-            }],
-            ['label', 'Freeze'],
-            ['select', {
-                on: {
-                    change: evt => r.set(freezePath, evt.target.value)
-                }},
-                ['READ', 'FREEZE', 'FREEZE_AND_RESET', 'RESET'].map(i => ['option', {
-                    props: {
-                        selected: i == freeze,
-                    }},
-                    i
-                ])
-            ]
+            formEntryNumber('ASDU',
+                            asdu,
+                            val => r.set(asduPath, val)),
+            formEntrySelect('Freeze',
+                            freeze,
+                            freezeValues,
+                            val => r.set(freezePath, val))
         ],
         ['button', {
             on: {
@@ -199,18 +187,121 @@ function masterControlCounterInterrogate(deviceId) {
 
 
 function masterControlCommand(deviceId) {
-    const dataPath = ['pages', deviceId, 'control', 'command'];
+    const cmdPath = ['pages', deviceId, 'control', 'command'];
 
-    dataPath;
+    const cmd = r.get(cmdPath) || {
+        type: 'Single',
+        asdu: 1,
+        io: 1,
+        action: 'EXECUTE',
+        value: {
+            Single: 'OFF',
+            Double: 'OFF',
+            Regulating: 'LOWER',
+            Normalized: 0,
+            Scaled: 0,
+            Floating: 0
+        },
+        time: null,
+        qualifier: 0
+    };
+
+    const onChange = u.curry((property, value) =>
+        r.set(cmdPath, u.set(property, value, cmd))
+    );
 
     return ['div.content',
-        ['div.form'],
+        ['div.form',
+            formEntrySelect('Type', cmd.type, commandTypes.slice(1), onChange('type')),
+            formEntryNumber('ASDU', cmd.asdu, onChange('asdu')),
+            formEntryNumber('IO', cmd.io, onChange('io')),
+            formEntrySelect('Action', cmd.action, commandActions, onChange('action')),
+            masterControlCommandValue(deviceId, cmd),
+            masterControlCommandTime(deviceId, cmd),
+            formEntryNumber('Qualifier', cmd.qualifier, onChange('qualifier'))
+        ],
         ['button', {
             on: {
-                click: null
+                click: _ => common.sendCommand(
+                    deviceId, u.set('value', cmd.value[cmd.type], cmd))
             }},
             'Send command'
         ]
+    ];
+}
+
+
+function masterControlCommandValue(deviceId, cmd) {
+    const cmdPath = ['pages', deviceId, 'control', 'command'];
+
+    const value = cmd.value[cmd.type];
+
+    const onChange = val => r.set(cmdPath, u.set(['value', cmd.type], val, cmd));
+
+    if (cmd.type == 'Single')
+        return formEntrySelect('Value', value, singleValues, onChange);
+
+    if (cmd.type == 'Double')
+        return formEntrySelect('Value', value, doubleValues, onChange);
+
+    if (cmd.type == 'Regulating')
+        return formEntrySelect('Value', value, regulatingValues, onChange);
+
+    return formEntryNumber('Value', value, onChange);
+}
+
+
+function masterControlCommandTime(deviceId, cmd) {
+    const cmdPath = ['pages', deviceId, 'control', 'command'];
+
+    const onChange = u.curry((property, value) =>
+        r.set(cmdPath, u.set(['time', property], value, cmd))
+    );
+
+    if (!cmd.time)
+        return formEntryCheckbox('Time', false, _ => onChange([], {
+            milliseconds: 0,
+            invalid: false,
+            minutes: 0,
+            summer_time: false,
+            hours: 0,
+            day_of_week: 0,
+            day_of_month: 0,
+            months: 0,
+            years: 0
+        }));
+
+    return [
+        formEntryCheckbox('Time',
+                          true,
+                          _ => onChange([], null)),
+        formEntryNumber('Time - milliseconds',
+                        cmd.time.milliseconds,
+                        onChange('milliseconds')),
+        formEntryCheckbox('Time - invalid',
+                          cmd.time.invalid,
+                          onChange('invalid')),
+        formEntryNumber('Time - minutes',
+                        cmd.time.minutes,
+                        onChange('minutes')),
+        formEntryCheckbox('Time - summer time',
+                          cmd.time.summer_time,
+                          onChange('summer_time')),
+        formEntryNumber('Time - hours',
+                        cmd.time.hours,
+                        onChange('hours')),
+        formEntryNumber('Time - day of week',
+                        cmd.time.day_of_week,
+                        onChange('day_of_week')),
+        formEntryNumber('Time - day of month',
+                        cmd.time.day_of_month,
+                        onChange('day_of_month')),
+        formEntryNumber('Time - months',
+                        cmd.time.months,
+                        onChange('months')),
+        formEntryNumber('Time - years',
+                        cmd.time.years,
+                        onChange('years'))
     ];
 }
 
@@ -292,7 +383,9 @@ function slavePanelData(deviceId, selectedDataId) {
     if (!selectedData)
         return [];
 
-    const onChange = u.curry((property, value) => common.changeData(deviceId, selectedDataId, property, value));
+    const onChange = u.curry((property, value) =>
+        common.changeData(deviceId, selectedDataId, property, value)
+    );
 
     return ['div.panel',
         formEntrySelect('Type', selectedData.type, dataTypes, onChange('type')),
@@ -312,7 +405,9 @@ function slavePanelCommand(deviceId, selectedCommandId) {
     if (!selectedCommand)
         return [];
 
-    const onChange = u.curry((path, value) => common.changeCommand(deviceId, selectedCommandId, path, value));
+    const onChange = u.curry((path, value) =>
+        common.changeCommand(deviceId, selectedCommandId, path, value)
+    );
 
     return ['div.panel',
         formEntrySelect('Type', selectedCommand.type, commandTypes, onChange('type')),
@@ -324,11 +419,179 @@ function slavePanelCommand(deviceId, selectedCommandId) {
 
 
 function slavePanelDataValue(deviceId, dataId) {
-    const dataPath = ['remote', 'devices', deviceId, 'data', 'data', dataId];
+    const dataType = r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'type');
 
-    dataPath;
+    if (dataType == 'Single')
+        return slavePanelDataValueSingle(deviceId, dataId);
+
+    if (dataType == 'Double')
+        return slavePanelDataValueDouble(deviceId, dataId);
+
+    if (dataType == 'Regulating')
+        return slavePanelDataValueRegulating(deviceId, dataId);
+
+    if (dataType == 'StepPosition')
+        return slavePanelDataValueStepPosition(deviceId, dataId);
+
+    if (dataType == 'Bitstring')
+        return slavePanelDataValueBitstring(deviceId, dataId);
+
+    if (dataType == 'Normalized')
+        return slavePanelDataValueNormalized(deviceId, dataId);
+
+    if (dataType == 'Scaled')
+        return slavePanelDataValueScaled(deviceId, dataId);
+
+    if (dataType == 'Floating')
+        return slavePanelDataValueFloating(deviceId, dataId);
+
+    if (dataType == 'BinaryCounter')
+        return slavePanelDataValueBinaryCounter(deviceId, dataId);
 
     return [];
+}
+
+
+function slavePanelDataValueSingle(deviceId, dataId) {
+    const value = (value =>
+        u.contains(value, singleValues) ? value : 'OFF'
+    )(r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'value'));
+
+    return [
+        formEntrySelect('Value', value, singleValues,
+                        value => common.changeData(deviceId, dataId, 'value', value))
+    ];
+}
+
+
+function slavePanelDataValueDouble(deviceId, dataId) {
+    const value = (value =>
+        u.contains(value, doubleValues) ? value : 'OFF'
+    )(r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'value'));
+
+    return [
+        formEntrySelect('Value', value, doubleValues,
+                        value => common.changeData(deviceId, dataId, 'value', value))
+    ];
+}
+
+
+function slavePanelDataValueRegulating(deviceId, dataId) {
+    const value = (value =>
+        u.contains(value, regulatingValues) ? value : 'LOWER'
+    )(r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'value'));
+
+    return [
+        formEntrySelect('Value', value, regulatingValues,
+                        value => common.changeData(deviceId, dataId, 'value', value))
+    ];
+}
+
+
+function slavePanelDataValueStepPosition(deviceId, dataId) {
+    const valuePath = ['remote', 'devices', deviceId, 'data', 'data', dataId, 'value'];
+
+    const value = (value =>
+        u.isInteger(value) ? value : 0
+    )(r.get(valuePath, 'value'));
+
+    const transient = (transient =>
+        u.isBoolean(transient) ? transient : false
+    )(r.get(valuePath, 'transient'));
+
+    const onChange = u.curry((path, value) =>
+        common.changeData(deviceId, dataId, ['value', path], value)
+    );
+
+    return [
+        formEntryNumber('Value', value, onChange('value')),
+        formEntryCheckbox('Value - transient', transient, onChange('transient'))
+    ];
+}
+
+
+function slavePanelDataValueBitstring(deviceId, dataId) {
+    const value = (value =>
+        u.isString(value) ? value : '00 00 00 00'
+    )(r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'value'));
+
+    return [
+        formEntryText('Value', value,
+                      value => common.changeData(deviceId, dataId, 'value', value))
+    ];
+}
+
+
+function slavePanelDataValueNormalized(deviceId, dataId) {
+    const value = (value =>
+        u.isNumber(value) ? value : 0
+    )(r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'value'));
+
+    return [
+        formEntryNumber('Value', value,
+                        value => common.changeData(deviceId, dataId, 'value', value))
+    ];
+}
+
+
+function slavePanelDataValueScaled(deviceId, dataId) {
+    const value = (value =>
+        u.isInteger(value) ? value : 0
+    )(r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'value'));
+
+    return [
+        formEntryNumber('Value', value,
+                        value => common.changeData(deviceId, dataId, 'value', value))
+    ];
+}
+
+
+function slavePanelDataValueFloating(deviceId, dataId) {
+    const value = (value =>
+        u.isNumber(value) ? value : 0
+    )(r.get('remote', 'devices', deviceId, 'data', 'data', dataId, 'value'));
+
+    return [
+        formEntryNumber('Value', value,
+                        value => common.changeData(deviceId, dataId, 'value', value))
+    ];
+}
+
+
+function slavePanelDataValueBinaryCounter(deviceId, dataId) {
+    const valuePath = ['remote', 'devices', deviceId, 'data', 'data', dataId, 'value'];
+
+    const value = (value =>
+        u.isInteger(value) ? value : 0
+    )(r.get(valuePath, 'value'));
+
+    const sequence = (sequence =>
+        u.isInteger(sequence) ? sequence : 0
+    )(r.get(valuePath, 'sequence'));
+
+    const overflow = (overflow =>
+        u.isBoolean(overflow) ? overflow : false
+    )(r.get(valuePath, 'overflow'));
+
+    const adjusted = (adjusted =>
+        u.isBoolean(adjusted) ? adjusted : false
+    )(r.get(valuePath, 'adjusted'));
+
+    const invalid = (invalid =>
+        u.isBoolean(invalid) ? invalid : false
+    )(r.get(valuePath, 'invalid'));
+
+    const onChange = u.curry((path, value) =>
+        common.changeData(deviceId, dataId, ['value', path], value)
+    );
+
+    return [
+        formEntryNumber('Value', value, onChange('value')),
+        formEntryNumber('Value - sequence', sequence, onChange('sequence')),
+        formEntryCheckbox('Value - overflow', overflow, onChange('overflow')),
+        formEntryCheckbox('Value - adjusted', adjusted, onChange('adjusted')),
+        formEntryCheckbox('Value - invalid', invalid, onChange('invalid'))
+    ];
 }
 
 
@@ -345,8 +608,9 @@ function slavePanelDataQuality(deviceId, dataId) {
                 overflow: false
             }));
 
-    const onChange = u.curry((path, value) => common.changeData(
-        deviceId, dataId, ['quality', path], value));
+    const onChange = u.curry((path, value) =>
+        common.changeData(deviceId, dataId, ['quality', path], value)
+    );
 
     return [
         formEntryCheckbox('Quality',
@@ -388,8 +652,9 @@ function slavePanelDataTime(deviceId, dataId) {
                 years: 0
             }));
 
-    const onChange = u.curry((path, value) => common.changeData(
-        deviceId, dataId, ['time', path], value));
+    const onChange = u.curry((path, value) =>
+        common.changeData(deviceId, dataId, ['time', path], value)
+    );
 
     return [
         formEntryCheckbox('Time',

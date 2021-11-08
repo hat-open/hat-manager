@@ -60,6 +60,11 @@
 
                     td {
                         &.col-remove { text-align: center; }
+
+                        &.col-timestamp {
+                            font-family: 'RobotoMono';
+                            font-size: 0.9rem;
+                        }
                     }
 
                     & > tbody {

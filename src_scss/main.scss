@@ -2,6 +2,7 @@
 @import 'shadow';
 @import 'table';
 @import 'fonts/inter';
+@import 'fonts/robotomono';
 @import 'fonts/fontawesome';
 
 @import 'orchestrator';
@@ -146,6 +147,8 @@ html, body {
             .col-time {
                 width: 15rem;
                 text-align: center;
+                font-family: 'RobotoMono';
+                font-size: 0.9rem;
             }
 
             .col-message {

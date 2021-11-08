@@ -43,6 +43,11 @@
                         &.col-int, &.col-short, &.col-long { text-align: right; }
                         &.col-bool { text-align: center; }
                         &.col-remove { text-align: center; }
+
+                        &.col-timestamp {
+                            font-family: 'RobotoMono';
+                            font-size: 0.9rem;
+                        }
                     }
 
                     & > tbody {

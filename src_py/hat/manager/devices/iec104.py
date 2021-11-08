@@ -75,7 +75,7 @@ class Master(common.Device):
         try:
             while True:
                 data = await conn.receive()
-                self._logger.log(f'received data changes (cound: {len(data)})')
+                self._logger.log(f'received data changes (count: {len(data)})')
                 self._add_data(data)
 
         except ConnectionError:
