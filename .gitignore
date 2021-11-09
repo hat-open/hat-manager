@@ -1,5 +1,6 @@
 /.doit.db
 /build
+/cache
 /node_modules
 /playground/data
 /src_py/**/json_schema_repo.json

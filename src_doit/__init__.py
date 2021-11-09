@@ -11,6 +11,9 @@ from hat.doit.py import (build_wheel,
 from hat.doit.docs import (SphinxOutputType,
                            build_sphinx)
 
+from .dist import *  # NOQA
+from . import dist
+
 
 __all__ = ['task_clean_all',
            'task_build',
@@ -19,7 +22,8 @@ __all__ = ['task_clean_all',
            'task_docs',
            'task_ui',
            'task_deps',
-           'task_json_schema_repo']
+           'task_json_schema_repo',
+           *dist.__all__]
 
 
 build_dir = Path('build')
