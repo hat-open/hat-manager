@@ -7,4 +7,5 @@ Content
 .. toctree::
     :maxdepth: 1
 
-    manager
+    user
+    developer/index

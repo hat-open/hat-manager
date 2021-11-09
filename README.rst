@@ -1,5 +1,5 @@
-hat-manager - Manager GUIs
-==========================
+hat-manager - Device management GUI
+===================================
 
 This component is part of Hat Open project - open-source framework of tools and
 libraries for developing applications used for remote monitoring, control and
@@ -22,12 +22,44 @@ For more information see:
     functionality and API are unstable.
 
 
+About
+-----
+
+Manager is administration tool which enables communication with remote devices
+and components. It can be used for testing various communication
+protocols/equipment and monitoring/controlling other Hat components.
+Usage of this tool is aimed at system administrators responsible for
+maintaining Hat systems and configuring communication with 3rd party devices.
+
+Supported communication:
+
+    * IEC 60870-5-104 Master
+    * IEC 60870-5-104 Slave
+    * Modbus Master
+    * Modbus Slave
+    * Hat Orchestrator
+    * Hat Monitor Server
+    * Hat Event Server
+
+
 Install
 -------
 
 ::
 
     $ pip install hat-manager
+
+
+Running
+-------
+
+By installing Manager from `hat-manager` package, executable `hat-manager`
+becomes available and can be used for starting this component.
+
+If previous configuration could not be found, Manager is started with default
+configuration and front-end available at ``http://127.0.0.1:23024``.
+
+All configuration parameters can be modified through front-end GUI.
 
 
 License

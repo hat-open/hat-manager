@@ -1,28 +1,5 @@
-.. _manager:
-
-Manager
-=======
-
-Manager is administration tool which enables communication with remote devices
-and components. It can be used for testing various communication
-protocols/equipment and monitoring/controlling other Hat components.
-Usage of this tool is aimed at system administrators responsible for
-maintaining Hat systems and configuring communication with 3rd party devices.
-
-
-Running
--------
-
-By installing Manager from `hat-manager` package, executable `hat-manager`
-becomes available and can be used for starting this component.
-
-    .. program-output:: python -m hat.manager --help
-
-If configuration could not be found, Manager is started with default
-configuration and front-end available at ``http://127.0.0.1:23024``.
-
-All configuration parameters can be modified through front-end GUI.
-
+Developer documentation
+=======================
 
 Overview
 --------
