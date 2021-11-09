@@ -205,7 +205,7 @@ function slavePanel(deviceId) {
 
     return ['div.panel',
         formEntryNumber('Device ID', data.device_id, onChange('device_id')),
-        formEntrySelect('Data type', data.data_type, ['',  ...dataTypes], onChange('data_type')),
+        formEntrySelect('Data type', data.data_type, dataTypes, onChange('data_type')),
         formEntryNumber('Address', data.address, onChange('address')),
         formEntryNumber('Value', data.value, onChange('value'))
     ];

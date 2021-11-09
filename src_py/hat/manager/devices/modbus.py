@@ -238,10 +238,10 @@ class Slave(common.Device):
     def _act_add_data(self):
         self._logger.log('creating new data')
         data_id = next(self._next_data_ids)
-        self._data.set(['data', data_id], {'device_id': None,
-                                           'data_type': None,
+        self._data.set(['data', data_id], {'device_id': 1,
+                                           'data_type': 'COIL',
                                            'address': None,
-                                           'value': None})
+                                           'value': 0})
         return data_id
 
     def _act_remove_data(self, data_id):

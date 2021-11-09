@@ -39,6 +39,11 @@ export function changeData(deviceId, dataId, path, value) {
 }
 
 
+export function notifyData(deviceId, dataId) {
+    common.execute(deviceId, 'notify_data', dataId);
+}
+
+
 export async function addCommand(deviceId) {
     const commandId = await common.execute(deviceId, 'add_command');
     r.set(['pages', deviceId, 'selected'], ['command', commandId]);

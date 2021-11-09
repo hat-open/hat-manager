@@ -140,7 +140,7 @@ class Slave(common.Device):
         self._logger = logger
         self._next_data_ids = (str(i) for i in itertools.count(1))
         self._next_command_ids = (str(i) for i in itertools.count(1))
-        self._data_change_cbs = util.CallbackRegistry()
+        self._data_notify_cbs = util.CallbackRegistry()
         self._data = common.DataStorage({
             'properties': conf['properties'],
             'connection_count': 0,
@@ -191,6 +191,9 @@ class Slave(common.Device):
         if action == 'change_data':
             return self._act_change_data(*args)
 
+        if action == 'notify_data':
+            return self._act_notify_data(*args)
+
         if action == 'add_command':
             return self._act_add_command(*args)
 
@@ -207,8 +210,8 @@ class Slave(common.Device):
             self._logger.log('new connection accepted')
             self._data.set('connection_count',
                            self._data.data['connection_count'] + 1)
-            change_cb = functools.partial(self._on_data_change, conn)
-            with self._data_change_cbs.register(change_cb):
+            notify_cb = functools.partial(self._on_data_notify, conn)
+            with self._data_notify_cbs.register(notify_cb):
                 while True:
                     await conn.receive()
 
@@ -268,7 +271,7 @@ class Slave(common.Device):
         self._logger.log(f'sending commands success {success}')
         return success
 
-    def _on_data_change(self, conn, data):
+    def _on_data_notify(self, conn, data):
         conn.notify_data_change([data])
 
     def _act_set_property(self, path, value):
@@ -312,11 +315,14 @@ class Slave(common.Device):
     def _act_change_data(self, data_id, path, value):
         self._logger.log(f'changing data {path} to {value}')
         self._data.set(['data', data_id, path], value)
+
+    def _act_notify_data(self, data_id):
         try:
             data = _data_from_json(self._data.data['data'][data_id])
         except Exception:
             return
-        self._data_change_cbs.notify(data)
+        self._logger.log('notifying data change')
+        self._data_notify_cbs.notify(data)
 
     def _act_add_command(self):
         self._logger.log('creating new command')

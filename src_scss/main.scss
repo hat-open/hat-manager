@@ -147,12 +147,15 @@ html, body {
             .col-time {
                 width: 15rem;
                 text-align: center;
-                font-family: 'RobotoMono';
-                font-size: 0.9rem;
             }
 
             .col-message {
                 text-align: left;
+            }
+
+            td.col-time {
+                font-family: 'RobotoMono';
+                font-size: 0.9rem;
             }
         }
     }

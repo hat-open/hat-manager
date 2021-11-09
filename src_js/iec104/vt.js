@@ -331,14 +331,22 @@ function slavePanelData(deviceId, selectedDataId) {
     );
 
     return ['div.panel',
-        formEntrySelect('Type', selectedData.type, dataTypes, onChange('type')),
-        formEntryNumber('ASDU', selectedData.asdu, onChange('asdu')),
-        formEntryNumber('IO', selectedData.io, onChange('io')),
-        slavePanelDataValue(deviceId, selectedDataId),
-        slavePanelDataQuality(deviceId, selectedDataId),
-        timeFormEntries(selectedData.time, onChange('time')),
-        formEntrySelect('Cause', selectedData.cause, dataCauses, onChange('cause')),
-        formEntryCheckbox('Is test', selectedData.is_test, onChange('is_test'))
+        ['div.form',
+            formEntrySelect('Type', selectedData.type, dataTypes, onChange('type')),
+            formEntryNumber('ASDU', selectedData.asdu, onChange('asdu')),
+            formEntryNumber('IO', selectedData.io, onChange('io')),
+            slavePanelDataValue(deviceId, selectedDataId),
+            slavePanelDataQuality(deviceId, selectedDataId),
+            timeFormEntries(selectedData.time, onChange('time')),
+            formEntrySelect('Cause', selectedData.cause, dataCauses, onChange('cause')),
+            formEntryCheckbox('Is test', selectedData.is_test, onChange('is_test'))
+        ],
+        ['button', {
+            on: {
+                click: _ => common.notifyData(deviceId, selectedDataId)
+            }},
+            'Notify change'
+        ]
     ];
 }
 
@@ -353,10 +361,12 @@ function slavePanelCommand(deviceId, selectedCommandId) {
     );
 
     return ['div.panel',
-        formEntrySelect('Type', selectedCommand.type, commandTypes, onChange('type')),
-        formEntryNumber('ASDU', selectedCommand.asdu, onChange('asdu')),
-        formEntryNumber('IO', selectedCommand.io, onChange('io')),
-        formEntryCheckbox('Success', selectedCommand.success, onChange('success'))
+        ['div.form',
+            formEntrySelect('Type', selectedCommand.type, commandTypes, onChange('type')),
+            formEntryNumber('ASDU', selectedCommand.asdu, onChange('asdu')),
+            formEntryNumber('IO', selectedCommand.io, onChange('io')),
+            formEntryCheckbox('Success', selectedCommand.success, onChange('success'))
+        ]
     ];
 }
 
