@@ -50,7 +50,7 @@ def patch_autostart(monkeypatch):
 
 
 @pytest.fixture
-def patch_device_queue(monkeypatch):
+async def patch_device_queue(monkeypatch):
     queue = aio.Queue()
 
     def get_default_conf(device_type):
