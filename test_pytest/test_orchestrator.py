@@ -8,9 +8,6 @@ from hat.manager import common
 import hat.manager.devices.orchestrator
 
 
-pytestmark = pytest.mark.asyncio
-
-
 @pytest.fixture
 def port():
     return util.get_unused_tcp_port()

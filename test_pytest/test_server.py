@@ -11,9 +11,6 @@ import hat.manager.devices
 import hat.manager.server
 
 
-pytestmark = pytest.mark.asyncio
-
-
 @pytest.fixture
 def port():
     return util.get_unused_tcp_port()

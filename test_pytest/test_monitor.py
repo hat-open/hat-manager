@@ -7,8 +7,6 @@ from hat import util
 from hat.manager import common
 import hat.manager.devices.monitor
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 def port():

@@ -9,9 +9,6 @@ import hat.event.common
 import hat.manager.devices.event
 
 
-pytestmark = pytest.mark.asyncio
-
-
 @pytest.fixture
 def addr():
     port = util.get_unused_tcp_port()
