@@ -4,7 +4,7 @@ import itertools
 
 from hat import json
 from hat.manager import common
-import hat.event.client
+import hat.event.eventer_client
 import hat.event.common
 
 
@@ -31,7 +31,8 @@ class Device(common.Device):
 
     async def create(self):
         address = self._data.data['address']
-        self._client = await hat.event.client.connect(address, [('*',)])
+        self._client = await hat.event.eventer_client.connect(
+            address, [('*',)])
         self._client.async_group.spawn(self._client_loop, self._client)
         return self._client
 
