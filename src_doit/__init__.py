@@ -8,8 +8,7 @@ from hat.doit.js import run_eslint
 from hat.doit.py import (build_wheel,
                          run_pytest,
                          run_flake8)
-from hat.doit.docs import (SphinxOutputType,
-                           build_sphinx)
+from hat.doit.docs import build_sphinx
 
 from .dist import *  # NOQA
 from . import dist
@@ -86,9 +85,17 @@ def task_test():
 
 def task_docs():
     """Docs"""
-    return {'actions': [(build_sphinx, [SphinxOutputType.HTML,
-                                        docs_dir,
-                                        build_docs_dir])],
+
+    def build():
+        build_sphinx(src_dir=docs_dir,
+                     dst_dir=build_docs_dir,
+                     project='hat-manager',
+                     extensions=['sphinx.ext.graphviz',
+                                 'sphinxcontrib.drawio',
+                                 'sphinxcontrib.plantuml',
+                                 'sphinxcontrib.programoutput'])
+
+    return {'actions': [build],
             'task_dep': ['ui',
                          'json_schema_repo']}
 
