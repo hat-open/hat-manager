@@ -59,7 +59,6 @@ def task_build():
             description='Hat manager',
             url='https://github.com/hat-open/hat-manager',
             license=common.License.APACHE2,
-            packages=['hat'],
             console_scripts=['hat-manager = hat.manager.main:main'])
 
     return {'actions': [build],
