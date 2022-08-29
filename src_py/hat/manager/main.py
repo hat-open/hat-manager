@@ -29,7 +29,7 @@ user_conf_dir: Path = Path(appdirs.user_config_dir('hat'))
                    "(default $XDG_CONFIG_HOME/hat/manager.{yaml|yml|json})")
 def main(conf: typing.Optional[Path]):
     """Main entry point"""
-    loop = aio.init_asyncio()
+    aio.init_asyncio()
 
     conf, conf_path = None, conf
     if not conf_path:
@@ -46,7 +46,7 @@ def main(conf: typing.Optional[Path]):
     logging.config.dictConfig(conf['log'])
 
     with contextlib.suppress(asyncio.CancelledError):
-        aio.run_asyncio(async_main(conf, conf_path), loop=loop)
+        aio.run_asyncio(async_main(conf, conf_path))
 
 
 async def async_main(conf: json.Data,
