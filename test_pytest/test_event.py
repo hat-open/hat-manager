@@ -73,7 +73,7 @@ def create_register_event(event_type, payload_data, with_payload=True):
 
 
 def create_event(event_type, payload_data):
-    event_id = hat.event.common.EventId(123, 321)
+    event_id = hat.event.common.EventId(123, 112233, 321)
     timestamp = hat.event.common.now()
     payload = hat.event.common.EventPayload(
         type=hat.event.common.EventPayloadType.JSON,
@@ -143,24 +143,24 @@ async def test_register(addr, server, text, register_events,
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is True
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgSubscribe'
     assert msg.data.data == [['*']]
 
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is False
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgQueryReq'
 
-    conn.send(chatter.Data('HatEvent', 'MsgQueryRes', []),
+    conn.send(chatter.Data('HatEventer', 'MsgQueryRes', []),
               conv=msg.conv)
 
     await device.execute('register', text, with_source_timestamp)
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is True
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgRegisterReq'
 
     events = [hat.event.common.register_event_from_sbs(i)
@@ -190,21 +190,21 @@ async def test_query(addr, server):
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is True
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgSubscribe'
     assert msg.data.data == [['*']]
 
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is False
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgQueryReq'
 
     events = [create_event(('a', 'b', 'c'), 123),
               create_event(('c', 'b', 'a'), 321)]
     data = [hat.event.common.event_to_sbs(event)
             for event in events]
-    conn.send(chatter.Data('HatEvent', 'MsgQueryRes', data),
+    conn.send(chatter.Data('HatEventer', 'MsgQueryRes', data),
               conv=msg.conv)
 
     latest = await latest_queue.get()
@@ -236,23 +236,23 @@ async def test_latest(addr, server):
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is True
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgSubscribe'
     assert msg.data.data == [['*']]
 
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is False
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgQueryReq'
 
-    conn.send(chatter.Data('HatEvent', 'MsgQueryRes', []),
+    conn.send(chatter.Data('HatEventer', 'MsgQueryRes', []),
               conv=msg.conv)
 
     events = [create_event(('a', 'b', 'c'), 1)]
     data = [hat.event.common.event_to_sbs(event)
             for event in events]
-    conn.send(chatter.Data('HatEvent', 'MsgNotify', data),
+    conn.send(chatter.Data('HatEventer', 'MsgNotify', data),
               conv=msg.conv)
 
     latest = await latest_queue.get()
@@ -264,7 +264,7 @@ async def test_latest(addr, server):
     events = [create_event(('c', 'b', 'a'), 2)]
     data = [hat.event.common.event_to_sbs(event)
             for event in events]
-    conn.send(chatter.Data('HatEvent', 'MsgNotify', data),
+    conn.send(chatter.Data('HatEventer', 'MsgNotify', data),
               conv=msg.conv)
 
     latest = await latest_queue.get()
@@ -279,7 +279,7 @@ async def test_latest(addr, server):
     events = [create_event(('a', 'b', 'c'), 3)]
     data = [hat.event.common.event_to_sbs(event)
             for event in events]
-    conn.send(chatter.Data('HatEvent', 'MsgNotify', data),
+    conn.send(chatter.Data('HatEventer', 'MsgNotify', data),
               conv=msg.conv)
 
     latest = await latest_queue.get()
@@ -308,23 +308,23 @@ async def test_changes(addr, server):
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is True
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgSubscribe'
     assert msg.data.data == [['*']]
 
     msg = await conn.receive()
     assert msg.first is True
     assert msg.last is False
-    assert msg.data.module == 'HatEvent'
+    assert msg.data.module == 'HatEventer'
     assert msg.data.type == 'MsgQueryReq'
 
-    conn.send(chatter.Data('HatEvent', 'MsgQueryRes', []),
+    conn.send(chatter.Data('HatEventer', 'MsgQueryRes', []),
               conv=msg.conv)
 
     events = [create_event(('a', 'b', 'c'), 1)]
     data = [hat.event.common.event_to_sbs(event)
             for event in events]
-    conn.send(chatter.Data('HatEvent', 'MsgNotify', data),
+    conn.send(chatter.Data('HatEventer', 'MsgNotify', data),
               conv=msg.conv)
 
     changes = await changes_queue.get()
@@ -337,7 +337,7 @@ async def test_changes(addr, server):
     events = [create_event(('c', 'b', 'a'), 2)]
     data = [hat.event.common.event_to_sbs(event)
             for event in events]
-    conn.send(chatter.Data('HatEvent', 'MsgNotify', data),
+    conn.send(chatter.Data('HatEventer', 'MsgNotify', data),
               conv=msg.conv)
 
     changes = await changes_queue.get()
@@ -354,7 +354,7 @@ async def test_changes(addr, server):
     events = [create_event(('a', 'b', 'c'), 3)]
     data = [hat.event.common.event_to_sbs(event)
             for event in events]
-    conn.send(chatter.Data('HatEvent', 'MsgNotify', data),
+    conn.send(chatter.Data('HatEventer', 'MsgNotify', data),
               conv=msg.conv)
 
     changes = await changes_queue.get()
